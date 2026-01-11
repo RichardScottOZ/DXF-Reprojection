@@ -48,6 +48,12 @@ def reproject_dxf_file(input_file, output_file, transformer):
     Returns:
         tuple: (success: bool, message: str)
     """
+    # DXF coordinate parsing constants
+    COORD_STRIDE = 6  # Number of lines per coordinate in DXF format
+    X_COORD_OFFSET = 2  # Offset to X coordinate in the stride
+    Y_COORD_OFFSET = 4  # Offset to Y coordinate in the stride
+    Z_COORD_OFFSET = 6  # Offset to Z coordinate in the stride
+    
     try:
         with open(input_file, 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -87,26 +93,22 @@ def reproject_dxf_file(input_file, output_file, transformer):
                 continue
             
             # Validate array length before accessing indices
-            if len(polygondict[key]) < 6:
+            if len(polygondict[key]) < COORD_STRIDE:
                 continue
             
-            coords_len = len(polygondict[key]) // 6
+            coords_len = len(polygondict[key]) // COORD_STRIDE
             for c in range(coords_len):
                 try:
-                    # Check bounds before accessing
-                    if (c*6 + 6) > len(polygondict[key]):
-                        break
-                    
-                    x = polygondict[key][c*6 + 2]
-                    y = polygondict[key][c*6 + 4]
+                    x = polygondict[key][c * COORD_STRIDE + X_COORD_OFFSET]
+                    y = polygondict[key][c * COORD_STRIDE + Y_COORD_OFFSET]
                     xnum = float(x.strip())
                     ynum = float(y.strip())
                     
                     # Transform coordinates
                     new_x, new_y = transformer.transform(xnum, ynum)
                     
-                    polygondict_new[key][c*6 + 2] = str(new_x) + "\n"
-                    polygondict_new[key][c*6 + 4] = str(new_y) + "\n"
+                    polygondict_new[key][c * COORD_STRIDE + X_COORD_OFFSET] = str(new_x) + "\n"
+                    polygondict_new[key][c * COORD_STRIDE + Y_COORD_OFFSET] = str(new_y) + "\n"
                     coords_transformed += 1
                 except (ValueError, IndexError) as e:
                     # Skip invalid coordinates
