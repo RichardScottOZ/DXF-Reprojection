@@ -49,7 +49,7 @@ def reproject_dxf_file(input_file, output_file, transformer):
         tuple: (success: bool, message: str)
     """
     try:
-        with open(input_file, 'r') as f:
+        with open(input_file, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         
         df = pd.DataFrame()
@@ -72,7 +72,7 @@ def reproject_dxf_file(input_file, output_file, transformer):
                 polygondict[acdbidx] = []
             if index in threedindex or 'ENDSEC' in row['dxf']:
                 flag = False
-            if flag == True:
+            if flag:
                 polygondict[acdbidx].append(row['dxf'])
         
         if not polygondict:
@@ -86,9 +86,17 @@ def reproject_dxf_file(input_file, output_file, transformer):
             if 'AcDbFace\n' not in polygondict[key]:
                 continue
             
+            # Validate array length before accessing indices
+            if len(polygondict[key]) < 6:
+                continue
+            
             coords_len = len(polygondict[key]) // 6
             for c in range(coords_len):
                 try:
+                    # Check bounds before accessing
+                    if (c*6 + 6) > len(polygondict[key]):
+                        break
+                    
                     x = polygondict[key][c*6 + 2]
                     y = polygondict[key][c*6 + 4]
                     xnum = float(x.strip())
@@ -110,7 +118,7 @@ def reproject_dxf_file(input_file, output_file, transformer):
             for i, pdata in enumerate(polygondict_new[key]):
                 linesnew[key + i] = polygondict_new[key][i]
         
-        with open(output_file, 'w') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             for l in linesnew:
                 f.write(l)
         
