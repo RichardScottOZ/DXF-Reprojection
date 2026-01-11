@@ -52,7 +52,6 @@ def reproject_dxf_file(input_file, output_file, transformer):
     COORD_STRIDE = 6  # Number of lines per coordinate in DXF format
     X_COORD_OFFSET = 2  # Offset to X coordinate in the stride
     Y_COORD_OFFSET = 4  # Offset to Y coordinate in the stride
-    Z_COORD_OFFSET = 6  # Offset to Z coordinate in the stride
     
     try:
         with open(input_file, 'r', encoding='utf-8') as f:
@@ -215,7 +214,12 @@ Common EPSG codes:
     if args.suffix:
         suffix = args.suffix
     else:
-        suffix = args.target_crs.split(':')[-1]
+        # Extract suffix from target CRS (e.g., 'EPSG:28354' -> '28354')
+        if ':' in args.target_crs:
+            suffix = args.target_crs.split(':')[-1]
+        else:
+            # If no colon, use the whole CRS string
+            suffix = args.target_crs.replace('/', '_')
     
     # Check if input is file or directory
     input_path = Path(args.input)
